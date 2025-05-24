@@ -12,7 +12,28 @@ A CEP extension for Adobe After Effects that exports the active composition as a
 
 ## Installation
 
-### Development Mode
+### Quick Installation (Development Mode)
+
+This extension includes an automatic installation script that makes development and testing easier:
+
+1. Clone this repository to your local machine
+2. Install Node.js dependencies:
+   ```
+   npm install
+   ```
+3. Run the installation script:
+   ```
+   npm run install:extension
+   ```
+
+The script will:
+- Create a symbolic link from the project to your Adobe CEP extensions folder
+- Automatically enable debug mode for Adobe applications
+- Provide feedback about the installation status
+
+### Manual Installation (Development Mode)
+
+If the automatic script doesn't work for you:
 
 1. Clone this repository to your local machine
 2. Enable debug mode in Adobe applications:
@@ -79,10 +100,17 @@ The generated JSON file follows a standard format for sprite sheets:
 }
 ```
 
+## Development
+
+### Scripts
+
+- `npm run install:extension` - Creates a symbolic link from your project to the Adobe CEP extensions folder and enables debug mode
+
 ## Requirements
 
 - Adobe After Effects CC 2018 or later
 - CEP 9.0 or later
+- Node.js 14.0 or later (for development and installation script)
 
 ## License
 

@@ -8,7 +8,7 @@
     "build": "npm install",
     "install:extension": "node ./scripts/install-extension.js"
   },
-  "author": "",
+  "author": "Leonid Kuznetsov",
   "license": "MIT",
   "dependencies": {
     "sharp": "^0.32.1"
