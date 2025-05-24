@@ -172,50 +172,6 @@ function selectAndCreateExportFolder(defaultFolderName) {
     }
 }
 
-// For backwards compatibility
-function showSaveDialog(defaultName) {
-    try {
-        var defaultFilename = defaultName || "sprite_sheet";
-        var suggestedName = defaultFilename.replace(/\s+/g, '_') + ".png";
-        
-        // Use File.saveDialog to get both path and filename
-        var file = File.saveDialog("Save Sprite Sheet As", "PNG:*.png");
-        
-        if (!file) return "null";
-        
-        // Extract folder path and filename
-        var folderPath = file.parent.fsName;
-        var fileName = file.name;
-        
-        // Remove .png extension for consistent handling
-        if (fileName.toLowerCase().indexOf('.png') !== -1) {
-            fileName = fileName.substring(0, fileName.toLowerCase().indexOf('.png'));
-        }
-        
-        // Return both folder path and filename as a JSON string
-        var result = {
-            folderPath: folderPath,
-            fileName: fileName
-        };
-        
-        return simpleStringify(result);
-    } catch (e) {
-        alert("Error in save dialog: " + e.toString());
-        return "null";
-    }
-}
-
-// For backwards compatibility
-function showFolderPicker() {
-    try {
-        var folder = Folder.selectDialog("Select output folder for sprite sheet");
-        return folder ? folder.fsName : "null";
-    } catch (e) {
-        alert("Error selecting folder: " + e.toString());
-        return "null";
-    }
-}
-
 // Render frames of the composition to PNGs directly to the specified output folder
 function renderCompToImageSequence(options) {
     var result = {error: null, frameFiles: []};
@@ -248,90 +204,58 @@ function renderCompToImageSequence(options) {
         // Create output directory
         var outputDir = new Folder(options.outputDir || "~/Desktop");
         if (!outputDir.exists) {
-            var dirCreated = outputDir.create();
-            if (!dirCreated) {
+            var created = outputDir.create();
+            if (!created) {
                 result.error = "Failed to create output directory";
                 return simpleStringify(result);
             }
         }
         
-        // Use a direct approach to generate PNG frames - save directly from comp
-        var frameDuration = 1.0 / comp.frameRate;
-        var totalFrames = Math.floor(comp.duration * comp.frameRate);
+        // Get composition settings
+        var frameRate = comp.frameRate;
+        var duration = comp.duration;
+        var frameCount = Math.floor(duration * frameRate);
+        var frameDuration = 1 / frameRate;
         
-        // Limit to a reasonable number of frames if needed
-        totalFrames = Math.min(totalFrames, 300); // Max 300 frames to prevent performance issues
+        // Array to store rendered file paths
+        var frameFiles = [];
         
-        // Suppress dialogs to prevent UI interruptions
-        app.beginSuppressDialogs();
-        
-        // Generate a PNG for each frame
-        var savedFrames = [];
-        
-        for (var i = 0; i < totalFrames; i++) {
-            var time = i * frameDuration;
-            var frameNum = i + 1;
+        // Loop through each frame and render
+        for (var i = 0; i < frameCount; i++) {
+            // Calculate the time for this frame
+            var frameTime = i * frameDuration;
             
-            // Simple frame filename: frame_1.png, frame_2.png, etc.
-            var frameFile = new File(outputDir.fsName + "/frame_" + frameNum + ".png");
+            // Create filename with padding
+            var frameNumber = padNumber(i, 4);
+            var fileName = "frame_" + frameNumber + ".png";
+            var filePath = outputDir.fsName + "/" + fileName;
             
-            // Try to save the frame
-            try {
-                comp.saveFrameToPng(time, frameFile);
-                savedFrames.push(frameFile.fsName);
-            } catch (frameErr) {
-                // Continue to next frame if there's an error
-            }
+            // Create file object
+            var file = new File(filePath);
+            
+            // Set current time to render frame accurately
+            comp.time = frameTime;
+            
+            // Render the frame
+            comp.saveFrameToPng(frameTime, file);
+            
+            // Add to our list
+            frameFiles.push(filePath);
         }
         
-        // Re-enable dialogs
-        app.endSuppressDialogs(false);
+        // Update result
+        result.frameFiles = frameFiles;
         
-        if (savedFrames.length === 0) {
-            // Fallback to an alternative method if direct saving failed
-            result.error = "No frames were rendered. Please try rendering manually.";
-            return simpleStringify(result);
-        }
-        
-        // Success case
-        result.frameFiles = savedFrames;
-        
+        // Return success
+        return simpleStringify(result);
     } catch (e) {
-        // Re-enable dialogs in case of error
-        app.endSuppressDialogs(false);
-        result.error = "Render error: " + e.toString();
+        result.error = "Error rendering frames: " + e.toString();
+        return simpleStringify(result);
     }
-    
-    return simpleStringify(result);
 }
 
 // Helper function to pad numbers with leading zeros
 function padNumber(num, size) {
-    var s = "00000" + num;
+    var s = "000000000" + num;
     return s.substr(s.length - size);
-}
-
-// Helper function to get a composition by ID
-function getCompById(id) {
-    try {
-        for (var i = 1; i <= app.project.numItems; i++) {
-            var item = app.project.item(i);
-            
-            // Check if item is a composition and if ID matches
-            if (item && item.typeName === "Composition" && item.id === id) {
-                return item;
-            }
-        }
-        
-        // If composition not found by ID, return active composition as fallback
-        var activeComp = app.project.activeItem;
-        if (activeComp && activeComp.typeName === "Composition") {
-            return activeComp;
-        }
-        
-        return null;
-    } catch (error) {
-        alert("Error finding composition: " + error.toString());
-        return null;
-    }
 }
