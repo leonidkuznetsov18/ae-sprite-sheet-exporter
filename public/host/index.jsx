@@ -1,6 +1,11 @@
 // Include JSON polyfill for ExtendScript
 //@include "json2.js"
 
+
+// use this DOCS: 
+// https://github.com/Adobe-CEP/Getting-Started-guides/tree/master/Exporting%20files%20from%20the%20host%20app
+// https://ae-scripting.docsforadobe.dev/renderqueue/renderqueue/
+
 // Simple logging
 function alert(message) {
     // Safer alert that won't interrupt the workflow
@@ -119,12 +124,8 @@ function isAfterEffects() {
 function renderCompositionToPNGSequence(outputFolder) {
     var result = {error: null, tempFolder: "", frameCount: 0, compInfo: null, debug: []};
     
-    function addDebug(message) {
-        result.debug.push(message);
-    }
-    
     try {
-        // Basic checks
+        // Validate environment and composition
         if (!isAfterEffects()) {
             result.error = "This script requires Adobe After Effects";
             return JSON.stringify(result);
@@ -136,112 +137,60 @@ function renderCompositionToPNGSequence(outputFolder) {
             return JSON.stringify(result);
         }
         
-        // Create temp folder for frames
-        var cleanCompName = comp.name.replace(/[^a-zA-Z0-9_-]/g, '_');
-        var tempFolderPath = outputFolder + "/" + cleanCompName + "_temp_frames";
-        var tempFolder = new Folder(tempFolderPath);
-        
-        if (!tempFolder.exists && !tempFolder.create()) {
-                result.error = "Failed to create temp directory: " + tempFolderPath;
-                return JSON.stringify(result);
-        }
-        
         var frameCount = Math.floor(comp.duration * comp.frameRate);
         if (frameCount <= 0) {
             result.error = "Invalid frame count: " + frameCount;
             return JSON.stringify(result);
         }
         
-        // Add composition to render queue and configure PNG output
+        // Setup output folder
+        var cleanCompName = comp.name.replace(/[^a-zA-Z0-9_-]/g, '_');
+        var tempFolderPath = outputFolder + "/" + cleanCompName + "_temp_frames";
+        var tempFolder = new Folder(tempFolderPath);
+        
+        if (!tempFolder.exists && !tempFolder.create()) {
+            result.error = "Failed to create temp directory: " + tempFolderPath;
+            return JSON.stringify(result);
+        }
+        
+        // Configure render queue
         var renderQueue = app.project.renderQueue;
         var renderQueueItem = renderQueue.items.add(comp);
         var outputModule = renderQueueItem.outputModules[1];
         
-        // Try to apply PNG sequence template
-        var templateApplied = false;
-        
-        for (var i = 0; i < PNG_TEMPLATES.length; i++) {
-            try {
-                outputModule.applyTemplate(PNG_TEMPLATES[i]);
-                var settings = outputModule.getSettings(GetSettingsFormat.STRING);
-                if (settings && settings.Format && settings.Format.toLowerCase().indexOf("png sequence") !== -1) {
-                    addDebug("Applied PNG template: " + PNG_TEMPLATES[i]);
-                    templateApplied = true;
-                        break;
-                }
-            } catch (e) {
-                // Try next template
-                }
-            }
-            
-            if (!templateApplied) {
+        // Apply PNG template (try each until one works)
+        var templateApplied = applyPNGTemplate(outputModule, result);
+        if (!templateApplied) {
             result.error = "Could not configure PNG sequence output";
             return JSON.stringify(result);
         }
         
-        // Set output path
-        var outputFileName = cleanCompName + "_[#####]";
-            var outputFilePath = tempFolderPath + "/" + outputFileName;
-                outputModule.file = new File(outputFilePath);
+        // Set output file path with AE sequence numbering
+        // [#####] tells After Effects to create numbered files: name_00001.png, name_00002.png, etc.
+        var sequencePattern = cleanCompName + "_[#####]";
+        outputModule.file = new File(tempFolderPath + "/" + sequencePattern);
         
-        // Start rendering and wait for completion
+        // Render and wait for completion
         renderQueue.render();
-        
-        var maxWaitTime = 300; // 5 minutes
-        var waitTime = 0;
-        
-        while (waitTime < maxWaitTime) {
-            var itemStatus = renderQueueItem.status;
-            
-                if (itemStatus === RQItemStatus.DONE) {
-                addDebug("Render completed successfully");
-                    break;
-                } else if (itemStatus === RQItemStatus.FAILED) {
-                result.error = "Render failed";
-                return JSON.stringify(result);
-                } else if (itemStatus === RQItemStatus.STOPPED) {
-                    result.error = "Render was stopped";
-                return JSON.stringify(result);
-            }
-            
-            $.sleep(1000);
-            waitTime += 1;
+        var renderResult = waitForRenderCompletion(renderQueueItem, result);
+        if (renderResult.error) {
+            return JSON.stringify(renderResult);
         }
         
-        if (waitTime >= maxWaitTime) {
-            result.error = "Render timeout after " + maxWaitTime + " seconds";
-            return JSON.stringify(result);
-        }
-        
-        // Check for generated files
-        var allFiles = tempFolder.getFiles("*");
-        if (!allFiles || allFiles.length === 0) {
-            result.error = "No files were generated";
-            return JSON.stringify(result);
-        }
-        
-        // Count PNG files
-        var pngFiles = [];
-            for (var f = 0; f < allFiles.length; f++) {
-            var fileName = allFiles[f].name;
-            if (fileName.toLowerCase().indexOf('.png') !== -1) {
-                pngFiles.push(fileName);
-            }
-        }
-        
-        if (pngFiles.length === 0) {
+        // Verify output files
+        var pngCount = countPNGFiles(tempFolder);
+        if (pngCount === 0) {
             result.error = "No PNG files were generated";
             return JSON.stringify(result);
         }
         
-        addDebug("Generated " + pngFiles.length + " PNG files");
+        result.debug.push("Generated " + pngCount + " PNG files");
         
-        // Clean up render queue
+        // Clean up and return success
         renderQueueItem.remove();
         
-        // Return success
         result.tempFolder = tempFolderPath;
-        result.frameCount = pngFiles.length;
+        result.frameCount = pngCount;
         result.compInfo = {
             name: comp.name,
             width: comp.width,
@@ -257,6 +206,63 @@ function renderCompositionToPNGSequence(outputFolder) {
         result.error = "Export error: " + e.toString();
         return JSON.stringify(result);
     }
+}
+
+// Helper function to apply PNG template
+function applyPNGTemplate(outputModule, result) {
+    for (var i = 0; i < PNG_TEMPLATES.length; i++) {
+        try {
+            outputModule.applyTemplate(PNG_TEMPLATES[i]);
+            var settings = outputModule.getSettings(GetSettingsFormat.STRING);
+            if (settings && settings.Format && settings.Format.toLowerCase().indexOf("png sequence") !== -1) {
+                result.debug.push("Applied PNG template: " + PNG_TEMPLATES[i]);
+                return true;
+            }
+        } catch (e) {
+            // Try next template
+        }
+    }
+    return false;
+}
+
+// Helper function to wait for render completion
+function waitForRenderCompletion(renderQueueItem, result) {
+    var maxWaitTime = 300; // 5 minutes
+    
+    for (var waitTime = 0; waitTime < maxWaitTime; waitTime++) {
+        var status = renderQueueItem.status;
+        
+        if (status === RQItemStatus.DONE) {
+            result.debug.push("Render completed successfully");
+            return {error: null};
+        }
+        
+        if (status === RQItemStatus.FAILED) {
+            return {error: "Render failed"};
+        }
+        
+        if (status === RQItemStatus.STOPPED) {
+            return {error: "Render was stopped"};
+        }
+        
+        $.sleep(1000);
+    }
+    
+    return {error: "Render timeout after " + maxWaitTime + " seconds"};
+}
+
+// Helper function to count PNG files in folder
+function countPNGFiles(folder) {
+    var allFiles = folder.getFiles("*");
+    if (!allFiles) return 0;
+    
+    var pngCount = 0;
+    for (var i = 0; i < allFiles.length; i++) {
+        if (allFiles[i].name.toLowerCase().indexOf('.png') !== -1) {
+            pngCount++;
+        }
+    }
+    return pngCount;
 }
 
 
