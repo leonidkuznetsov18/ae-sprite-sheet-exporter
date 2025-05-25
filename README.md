@@ -35,7 +35,7 @@ See the AE Sprite Sheet Exporter in action:
 
 1. **Clone and install dependencies:**
    ```bash
-   git clone <repository-url>
+   git clone git@github.com:leonidkuznetsov18/ae-sprite-sheet-exporter.git
    cd ae-sprite-sheet-exporter
    npm install
    ```
@@ -98,13 +98,6 @@ Each export creates a dedicated folder with the following structure:
 ├── 🖼️ spritesheet.png    # Main sprite sheet image
 └── 📄 metadata.json      # Frame coordinates and animation data
 ```
-
-### 🎨 UI Features
-
-- **⏳ Loading States**: Export button shows "Loading..." during processing
-- **📋 Copy Logs**: One-click copy of debug output to clipboard
-- **📊 Real-time Status**: Clear progress updates throughout the export process
-- **🎯 Smart Feedback**: Organized debug output with emojis and clear structure
 
 ## 🔧 Technical Details
 
