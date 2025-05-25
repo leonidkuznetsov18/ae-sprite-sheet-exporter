@@ -47,19 +47,6 @@ temp/
 logs/
 *.log
 
-# Output and render files
-*.png
-*.jpg
-*.jpeg
-*.gif
-*.svg
-*.json
-# Uncomment if you want to include JSON metadata in version control:
-# !manifest.json
-
-# Exception: Allow demo GIF to be tracked
-!demo/ae-sprite-sheet-exporter-demo.gif
-
 # ZXP/Extension packages
 *.zxp
 
