@@ -1,7 +1,7 @@
 {
   "name": "ae-sprite-sheet-exporter",
-  "version": "2.0.0",
-  "description": "Adobe After Effects CEP extension for exporting compositions as optimized sprite sheets with JSON metadata. Outputs exactly 2 files: sprite sheet image and frame data.",
+  "version": "1.0.0",
+  "description": "Adobe After Effects CEP extension for exporting compositions as optimized sprite sheets",
   "main": "index.js",
   "type": "module",
   "engines": {

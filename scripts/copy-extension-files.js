@@ -64,22 +64,6 @@ async function copyExtensionFiles() {
       console.log('✅ Copied .debug file');
     }
 
-    // Copy package.json and package-lock.json for node_modules resolution
-    const packageJson = path.join(projectRoot, 'package.json');
-    const packageLock = path.join(projectRoot, 'package-lock.json');
-    const packageDistJson = path.join(distDir, 'package.json');
-    const packageDistLock = path.join(distDir, 'package-lock.json');
-    
-    if (await fs.pathExists(packageJson)) {
-      await fs.copy(packageJson, packageDistJson);
-      console.log('✅ Copied package.json');
-    }
-    
-    if (await fs.pathExists(packageLock)) {
-      await fs.copy(packageLock, packageDistLock);
-      console.log('✅ Copied package-lock.json');
-    }
-
     // Note: Node.js dependencies will be resolved from the project root at runtime
     // CEP extensions can access the project's node_modules via require() calls
     console.log('📝 Node.js dependencies will be resolved from project root at runtime');
@@ -116,34 +100,7 @@ async function copyExtensionFiles() {
       console.log('✅ Updated HTML script references');
     }
 
-    // Create a simple README for the dist directory
-    const distReadme = path.join(distDir, 'README.md');
-    const readmeContent = `# AE Sprite Sheet Exporter - Distribution
 
-This directory contains the built CEP extension ready for installation.
-
-## Files:
-- \`index.html\` - Main extension UI (built by Vite)
-- \`assets/\` - Bundled and transpiled JavaScript/CSS
-- \`host/\` - ExtendScript files for After Effects integration
-- \`CSXS/\` - CEP manifest and configuration
-- \`package.json\` - For Node.js module resolution from project root
-- \`.debug\` - Debug configuration
-
-## Installation:
-This directory is automatically symlinked to the CEP extensions folder when you run:
-\`\`\`
-npm run install:extension
-\`\`\`
-
-## Build Info:
-- Built with Vite
-- JavaScript transpiled from ES6+ to ES3/5 for CEP compatibility
-- Node.js dependencies resolved from project root at runtime
-`;
-
-    await fs.writeFile(distReadme, readmeContent);
-    console.log('✅ Created dist README');
 
     console.log('\n🎉 Extension files copied successfully!');
     console.log(`📁 Distribution ready in: ${distDir}`);

@@ -2,16 +2,34 @@
 
 Adobe After Effects CEP extension for exporting compositions as optimized sprite sheets with JSON metadata. Built with modern ES6+ JavaScript and Vite for optimal performance and compatibility.
 
-## Features
+## ✨ Features
 
-- **Modern Build System**: Built with Vite, using ES6+ syntax transpiled to ES3/5 for CEP compatibility
-- **High-Quality Output**: Uses Sharp library for superior image processing
-- **Smart Layout**: Automatically calculates optimal sprite sheet layouts
-- **Comprehensive Metadata**: Generates detailed JSON with frame data and animation info
-- **Multiple Formats**: Supports PNG, TIFF, PSD input from After Effects
-- **Usage Examples**: Auto-generates code examples for popular frameworks
+- **🎨 Canvas-Based Processing**: Pure JavaScript sprite sheet generation (no external dependencies)
+- **🚀 Modern UI**: Beautiful interface with loading states and copy-to-clipboard functionality
+- **📁 Organized Output**: Creates dedicated folders for each export with clean file structure
+- **⚡ Fast & Reliable**: Simplified PNG-only workflow for maximum compatibility
+- **🔧 Modern Build System**: Built with Vite, using ES6+ syntax transpiled to ES3/5 for CEP compatibility
+- **📊 Smart Layout**: Automatically calculates optimal sprite sheet layouts
+- **📄 Comprehensive Metadata**: Generates detailed JSON with frame data and animation info
 
-## Quick Start
+## 🎬 Demo
+
+See the AE Sprite Sheet Exporter in action:
+
+![AE Sprite Sheet Exporter Demo](./demo/ae-sprite-sheet-exporter-demo.gif)
+
+*Watch the complete workflow: opening the extension in After Effects, loading a composition, and exporting a sprite sheet with metadata.*
+
+> **🎥 Full Quality Video**: [`ae_export_sprite_demo.mp4`](./demo/ae_export_sprite_demo.mp4) *(Click to download the full MP4 version)*
+
+### What you'll see in the demo:
+1. **🔧 Extension Installation** - Quick setup process
+2. **🎨 After Effects Integration** - Seamless workflow within AE
+3. **📊 Real-time Processing** - Live progress updates and feedback
+4. **📁 Organized Output** - Clean file structure with sprite sheet and JSON metadata
+5. **🚀 Modern UI** - Beautiful interface with loading states and copy functionality
+
+## 🚀 Quick Start
 
 ### Installation
 
@@ -29,14 +47,12 @@ Adobe After Effects CEP extension for exporting compositions as optimized sprite
 
 3. **Open After Effects** and find "Sprite Sheet Exporter" in the Window > Extensions menu
 
-### Development
+### Build/Dev process
 
-- **Development build:** `npm run dev` (starts Vite dev server)
-- **Production build:** `npm run build` (builds with Vite)
 - **Build extension:** `npm run build:extension` (builds and copies all files to dist)
 - **Install extension:** `npm run install:extension` (builds and symlinks to CEP extensions folder)
 
-## Build System
+## 🏗️ Build System
 
 This project uses a modern build system with the following architecture:
 
@@ -44,11 +60,11 @@ This project uses a modern build system with the following architecture:
 ```
 src/
 ├── client/           # Modern ES6+ client-side code
-│   ├── index.html   # Main UI (with modern styling)
-│   ├── index.js     # Main application class
+│   ├── index.html   # Main UI with modern styling and UX features
+│   ├── index.js     # Main application class with Canvas processing
 │   └── CSInterface.js # Adobe CEP interface
-└── host/            # ExtendScript for After Effects
-    └── index.jsx    # After Effects integration
+└── host/            # Simplified ExtendScript for After Effects
+    └── index.jsx    # PNG template detection and render queue management
 ```
 
 ### Build Process
@@ -67,51 +83,54 @@ dist/
 └── package.json     # For Node.js module resolution from project root
 ```
 
-## Usage
+## 📖 Usage
 
 1. **Open After Effects** and create or open a composition
 2. **Launch the extension** from Window > Extensions > Sprite Sheet Exporter
-3. **Click "Update Composition Info"** to load your active composition
-4. **Click "Export Sprite Sheet"** to select output folder and generate files
+3. **Click "🔄 Update Composition Info"** to load your active composition
+4. **Click "📦 Export Sprite Sheet"** to select output folder and generate files
 
-### Output Files
+### 📁 Output Structure
 
-The extension generates exactly 2 files:
-- `[composition_name]_spritesheet.png` - The optimized sprite sheet image
-- `[composition_name]_metadata.json` - Frame data and animation metadata
+Each export creates a dedicated folder with the following structure:
+```
+[CompName]_spritesheet_[YYYY-MM-DD]/
+├── 🖼️ spritesheet.png    # Main sprite sheet image
+└── 📄 metadata.json      # Frame coordinates and animation data
+```
 
-## Technical Details
+### 🎨 UI Features
 
-### Dependencies
+- **⏳ Loading States**: Export button shows "Loading..." during processing
+- **📋 Copy Logs**: One-click copy of debug output to clipboard
+- **📊 Real-time Status**: Clear progress updates throughout the export process
+- **🎯 Smart Feedback**: Organized debug output with emojis and clear structure
 
-- **Sharp**: High-performance image processing (supports TIFF/PSD from AE)
-- **fs-extra**: Enhanced file system operations
+## 🔧 Technical Details
+
+### Core Technologies
+
+- **Canvas API**: High-performance sprite sheet generation in pure JavaScript
+- **fs-extra**: Enhanced file system operations for organized output
 - **Vite**: Modern build tool with ES6+ → ES3/5 transpilation
 - **@vitejs/plugin-legacy**: Ensures compatibility with older CEP environments
+
+### PNG Processing Workflow
+
+1. **Template Detection**: Automatically finds After Effects PNG sequence templates
+2. **Render Queue**: Uses AE's built-in render queue for frame export
+3. **Canvas Processing**: Loads PNG frames and composites into sprite sheet
+4. **Smart Layout**: Calculates optimal grid arrangement for frames
+5. **Metadata Generation**: Creates comprehensive JSON with frame coordinates
 
 ### Compatibility
 
 - **After Effects**: 2022 and later (CEP 12.0+)
 - **Node.js**: 17.7.1+ (embedded in After Effects)
 - **Platforms**: macOS and Windows
+- **Input Formats**: PNG sequences from After Effects render queue
 
-### Sharp Library Integration
-
-The extension includes sophisticated Sharp library loading with multiple fallback strategies:
-1. Direct require from node_modules
-2. Extension-relative path resolution
-3. Working directory resolution
-4. Canvas fallback for unsupported environments
-
-## Development Notes
-
-### ES6+ Features Used
-
-- Classes and arrow functions
-- Async/await and Promises
-- Template literals and destructuring
-- Modern array methods (map, filter, etc.)
-- Optional chaining (`?.`)
+## 💻 Development Notes
 
 ### CEP Compatibility
 
@@ -123,32 +142,41 @@ Vite's legacy plugin ensures compatibility by:
 
 ### Debugging
 
-Debug mode is automatically enabled during installation. Check the debug output panel in the extension for detailed logging.
+Debug mode is automatically enabled during installation. Use the "📋 Copy Logs" button to easily share debug output for troubleshooting.
 
-## Troubleshooting
+## 🛠️ Troubleshooting
 
-### Sharp Library Issues
-If Sharp fails to load, the extension will fall back to Canvas-based processing (PNG/JPEG only). To fix:
-1. Ensure Node.js version compatibility
-2. Rebuild Sharp: `npm rebuild sharp`
-3. Check debug output for specific error messages
+### Common Issues
 
-### Build Issues
-- Ensure all dependencies are installed: `npm install`
-- Clear dist and rebuild: `rm -rf dist && npm run build:extension`
-- Check Node.js version: `node --version` (should be 17.7.1+)
-
-### Extension Not Appearing
+**Extension Not Appearing:**
 1. Verify debug mode is enabled
 2. Check CEP extensions folder for symlink
 3. Restart After Effects
 4. Check Console for CEP errors
 
-## License
+**Export Fails:**
+1. Ensure composition is selected and active
+2. Check debug output for specific error messages
+3. Verify PNG template availability in After Effects
+4. Try with a simpler composition first
+
+**Build Issues:**
+- Ensure all dependencies are installed: `npm install`
+- Clear dist and rebuild: `rm -rf dist && npm run build:extension`
+- Check Node.js version: `node --version` (should be 17.7.1+)
+
+## 📊 Performance
+
+- **Bundle Size**: ~35KB total (legacy + modern)
+- **Processing**: Canvas-based, no external image libraries
+- **Memory**: Efficient frame-by-frame processing
+- **Speed**: Direct PNG processing without format conversion
+
+## 📄 License
 
 MIT License - see LICENSE file for details.
 
-## Contributing
+## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
@@ -158,4 +186,4 @@ MIT License - see LICENSE file for details.
 
 ---
 
-**Built with ❤️ using modern JavaScript and Vite** 
+**Built with ❤️ using modern JavaScript, Canvas API, and Vite by Leonid Kuznetsov** 

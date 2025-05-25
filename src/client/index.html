@@ -151,6 +151,37 @@
             margin-top: 20px;
         }
 
+        .debug-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .debug-header h3 {
+            margin: 0;
+        }
+
+        .copy-button {
+            width: 100px;
+            height: 26px;
+            padding: 3px;
+            margin: 0;
+            font-size: 0.8rem;
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-transform: none;
+            letter-spacing: normal;
+        }
+
+        .copy-button:hover {
+            box-shadow: 0 2px 8px rgba(40, 167, 69, 0.4);
+        }
+
         .debug-output {
             background: #1e1e1e;
             color: #d4d4d4;
@@ -247,14 +278,16 @@
 
             <div class="debug-section">
                 <div class="section">
-                    <h3>🔍 Debug Output</h3>
+                    <div class="debug-header">
+                        <h3>🔍 Debug Output</h3>
+                        <button id="copy-debug-btn" class="copy-button">📋 Copy Logs</button>
+                    </div>
                     <div id="debug-output" class="debug-output"></div>
                 </div>
             </div>
 
             <div class="version">
-                <p>AE Sprite Sheet Exporter v2.0 (Modern)</p>
-                <p>Built with Vite + ES6+ → ES3/5</p>
+                <p>Made with ❤️ by <a href="https://github.com/leonidkuznetsov18" target="_blank">Leonid Kuznetsov</a></p>
             </div>
         </div>
     </div>

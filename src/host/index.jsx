@@ -180,8 +180,8 @@ function renderCompositionToPNGSequence(outputFolder) {
         var tempFolder = new Folder(tempFolderPath);
         
         if (!tempFolder.exists && !tempFolder.create()) {
-            result.error = "Failed to create temp directory: " + tempFolderPath;
-            return simpleStringify(result);
+                result.error = "Failed to create temp directory: " + tempFolderPath;
+                return simpleStringify(result);
         }
         
         var frameCount = Math.floor(comp.duration * comp.frameRate);
@@ -205,22 +205,22 @@ function renderCompositionToPNGSequence(outputFolder) {
                 if (settings && settings.Format && settings.Format.toLowerCase().indexOf("png sequence") !== -1) {
                     addDebug("Applied PNG template: " + PNG_TEMPLATES[i]);
                     templateApplied = true;
-                    break;
+                        break;
                 }
             } catch (e) {
                 // Try next template
+                }
             }
-        }
-        
-        if (!templateApplied) {
+            
+            if (!templateApplied) {
             result.error = "Could not configure PNG sequence output";
             return simpleStringify(result);
         }
         
         // Set output path
         var outputFileName = cleanCompName + "_[#####]";
-        var outputFilePath = tempFolderPath + "/" + outputFileName;
-        outputModule.file = new File(outputFilePath);
+            var outputFilePath = tempFolderPath + "/" + outputFileName;
+                outputModule.file = new File(outputFilePath);
         
         // Start rendering and wait for completion
         renderQueue.render();
@@ -231,14 +231,14 @@ function renderCompositionToPNGSequence(outputFolder) {
         while (waitTime < maxWaitTime) {
             var itemStatus = renderQueueItem.status;
             
-            if (itemStatus === RQItemStatus.DONE) {
+                if (itemStatus === RQItemStatus.DONE) {
                 addDebug("Render completed successfully");
-                break;
-            } else if (itemStatus === RQItemStatus.FAILED) {
+                    break;
+                } else if (itemStatus === RQItemStatus.FAILED) {
                 result.error = "Render failed";
                 return simpleStringify(result);
-            } else if (itemStatus === RQItemStatus.STOPPED) {
-                result.error = "Render was stopped";
+                } else if (itemStatus === RQItemStatus.STOPPED) {
+                    result.error = "Render was stopped";
                 return simpleStringify(result);
             }
             
@@ -260,7 +260,7 @@ function renderCompositionToPNGSequence(outputFolder) {
         
         // Count PNG files
         var pngFiles = [];
-        for (var f = 0; f < allFiles.length; f++) {
+            for (var f = 0; f < allFiles.length; f++) {
             var fileName = allFiles[f].name;
             if (fileName.toLowerCase().indexOf('.png') !== -1) {
                 pngFiles.push(fileName);
@@ -275,7 +275,7 @@ function renderCompositionToPNGSequence(outputFolder) {
         addDebug("Generated " + pngFiles.length + " PNG files");
         
         // Clean up render queue
-        renderQueueItem.remove();
+            renderQueueItem.remove();
         
         // Return success
         result.tempFolder = tempFolderPath;
