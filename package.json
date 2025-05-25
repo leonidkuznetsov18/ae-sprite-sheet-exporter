@@ -11,8 +11,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "build:extension": "npm run build",
-    "install:extension": "npm run build:extension && node ./scripts/install-extension.js"
+    "install:extension": "npm run build && node ./scripts/install-extension.js"
   },
   "keywords": [
     "adobe",
@@ -33,7 +32,6 @@
     "chalk": "^5.2.0",
     "rimraf": "^5.0.1",
     "terser": "^5.36.0",
-    "vite": "^5.4.11",
-    "vite-plugin-static-copy": "^3.0.0"
+    "vite": "^5.4.11"
   }
 }

@@ -1,9 +1,6 @@
 import { defineConfig } from 'vite';
 import legacy from '@vitejs/plugin-legacy';
-import { viteStaticCopy } from 'vite-plugin-static-copy';
 import { resolve } from 'path';
-import fs from 'fs';
-import path from 'path';
 
 export default defineConfig({
   base: './', // Use relative paths for CEP compatibility
@@ -13,33 +10,7 @@ export default defineConfig({
       additionalLegacyPolyfills: ['regenerator-runtime/runtime'],
       renderLegacyChunks: true,
       modernPolyfills: false
-    }),
-    viteStaticCopy({
-      targets: [
-        { src: 'src/host', dest: '.' },
-        { src: 'src/client/CSInterface.js', dest: '.' },
-        { src: 'CSXS', dest: '.' },
-        { src: '.debug', dest: '.' }
-      ]
-    }),
-    {
-      name: 'move-html-to-root',
-      writeBundle() {
-        const srcHtml = path.resolve('dist/src/client/index.html');
-        const destHtml = path.resolve('dist/index.html');
-        
-        if (fs.existsSync(srcHtml)) {
-          let html = fs.readFileSync(srcHtml, 'utf8');
-          // Fix asset paths for CEP compatibility
-          html = html.replace(/src="\/assets\//g, 'src="./assets/');
-          html = html.replace(/href="\/assets\//g, 'href="./assets/');
-          fs.writeFileSync(destHtml, html);
-          
-          // Clean up
-          fs.rmSync(path.resolve('dist/src'), { recursive: true, force: true });
-        }
-      }
-    }
+    })
   ],
   
   build: {
@@ -47,7 +18,7 @@ export default defineConfig({
     emptyOutDir: true,
     
     rollupOptions: {
-      input: resolve(__dirname, 'src/client/index.html'),
+      input: resolve(__dirname, 'index.html'),
       output: {
         // Ensure compatibility with CEP
         format: 'iife',
