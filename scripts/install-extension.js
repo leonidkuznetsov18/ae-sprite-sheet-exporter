@@ -10,6 +10,7 @@ const __dirname = path.dirname(__filename);
 
 // Set project paths
 const projectRoot = path.resolve(__dirname, '..');
+const distDir = path.join(projectRoot, 'dist');
 
 // Extension information
 const extensionId = 'com.spritesheet.exporter';
@@ -76,12 +77,19 @@ async function removeExistingExtension(extensionPath) {
  */
 async function installExtension() {
   try {
+    // Check if dist directory exists
+    if (!(await fs.pathExists(distDir))) {
+      console.error('❌ Dist directory not found. Please run "npm run build:extension" first.');
+      process.exit(1);
+    }
+    
     const extensionsPath = getExtensionsPath();
     const extensionPath = path.join(extensionsPath, extensionId);
     
     console.log(`Extensions path: ${extensionsPath}`);
     console.log(`Extension ID: ${extensionId}`);
     console.log(`Target path: ${extensionPath}`);
+    console.log(`Source path: ${projectRoot} (project root for Node.js module resolution)`);
     
     // Ensure extensions directory exists
     await fs.ensureDir(extensionsPath);
@@ -89,34 +97,34 @@ async function installExtension() {
     // Remove existing extension
     await removeExistingExtension(extensionPath);
     
-    // Create symlink
+    // Create symlink to project root (not dist) so Node.js can resolve modules
     console.log(`Creating symlink from ${projectRoot} to ${extensionPath}`);
     
-    if (os.platform() === 'win32') {
-      // On Windows, use mklink command (requires admin privileges)
-      try {
-        execSync(`mklink /D "${extensionPath}" "${projectRoot}"`);
+          if (os.platform() === 'win32') {
+        // On Windows, use mklink command (requires admin privileges)
+        try {
+          execSync(`mklink /D "${extensionPath}" "${projectRoot}"`);
+          console.log('✅ Extension installed successfully');
+        } catch (error) {
+          console.error('❌ Error creating symlink. Try running as administrator.');
+          console.error(error.message);
+          console.log('\nAlternatively, manually copy the files from:');
+          console.log(projectRoot);
+          console.log('to:');
+          console.log(extensionPath);
+        }
+      } else {
+        // On macOS/Linux, try to force remove any existing link again (just to be safe)
+        try {
+          execSync(`rm -rf "${extensionPath}"`);
+        } catch (e) {
+          // Ignore errors
+        }
+        
+        // Create the symlink to project root
+        await fs.symlink(projectRoot, extensionPath);
         console.log('✅ Extension installed successfully');
-      } catch (error) {
-        console.error('❌ Error creating symlink. Try running as administrator.');
-        console.error(error.message);
-        console.log('\nAlternatively, manually copy the files from:');
-        console.log(projectRoot);
-        console.log('to:');
-        console.log(extensionPath);
       }
-    } else {
-      // On macOS/Linux, try to force remove any existing link again (just to be safe)
-      try {
-        execSync(`rm -rf "${extensionPath}"`);
-      } catch (e) {
-        // Ignore errors
-      }
-      
-      // Create the symlink
-      await fs.symlink(projectRoot, extensionPath);
-      console.log('✅ Extension installed successfully');
-    }
     
     console.log('\nTo enable debugging:');
     if (os.platform() === 'darwin') {

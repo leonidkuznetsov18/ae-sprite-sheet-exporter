@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sprite Sheet Exporter</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .content {
+            padding: 20px;
+        }
+
+        .section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #4facfe;
+        }
+
+        .section h3 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .info-item {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+        }
+
+        .info-label {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-bottom: 2px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .info-value {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 0.9rem;
+        }
+
+        .button {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .button-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .button-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .button-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .button-secondary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(245, 87, 108, 0.4);
+        }
+
+        .button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none !important;
+            box-shadow: none !important;
+        }
+
+        .status {
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            text-align: center;
+            background: #e3f2fd;
+            color: #1565c0;
+            border: 1px solid #bbdefb;
+        }
+
+        .debug-section {
+            margin-top: 20px;
+        }
+
+        .debug-output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+            font-size: 0.8rem;
+            line-height: 1.4;
+            max-height: 200px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            border: 1px solid #333;
+        }
+
+        .debug-output::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .debug-output::-webkit-scrollbar-track {
+            background: #2d2d2d;
+            border-radius: 4px;
+        }
+
+        .debug-output::-webkit-scrollbar-thumb {
+            background: #555;
+            border-radius: 4px;
+        }
+
+        .debug-output::-webkit-scrollbar-thumb:hover {
+            background: #777;
+        }
+
+        .version {
+            text-align: center;
+            color: #6c757d;
+            font-size: 0.8rem;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #e9ecef;
+        }
+
+        @media (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+            
+            .container {
+                max-width: 100%;
+            }
+            
+            .info-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎬 Sprite Sheet Exporter</h1>
+            <p>Export After Effects compositions as optimized sprite sheets</p>
+        </div>
+
+        <div class="content">
+            <div class="section">
+                <h3>📊 Composition Info</h3>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <div class="info-label">Name</div>
+                        <div class="info-value" id="comp-name">No composition</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Frames</div>
+                        <div class="info-value" id="frame-count">0</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Dimensions</div>
+                        <div class="info-value" id="comp-dimensions">0 x 0</div>
+                    </div>
+                    <div class="info-item">
+                        <div class="info-label">Frame Rate</div>
+                        <div class="info-value" id="comp-fps">0 fps</div>
+                    </div>
+                </div>
+                <button id="update-btn" class="button button-primary">🔄 Update Composition Info</button>
+            </div>
+
+            <div class="section">
+                <h3>🚀 Export</h3>
+                <div id="status-message" class="status">Extension loaded. Click "Update Composition Info" to begin.</div>
+                <button id="export-btn" class="button button-secondary" disabled>📦 Export Sprite Sheet</button>
+            </div>
+
+            <div class="debug-section">
+                <div class="section">
+                    <h3>🔍 Debug Output</h3>
+                    <div id="debug-output" class="debug-output"></div>
+                </div>
+            </div>
+
+            <div class="version">
+                <p>AE Sprite Sheet Exporter v2.0 (Modern)</p>
+                <p>Built with Vite + ES6+ → ES3/5</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Load CSInterface first -->
+    <script type="text/javascript" src="./CSInterface.js"></script>
+    <!-- Vite will inject the bundled script here -->
+    <script type="module" src="./index.js"></script>
+</body>
+</html>
