@@ -68,11 +68,7 @@ export default defineConfig({
     }
   },
   
-  resolve: {
-    alias: {
-      '@': resolve(__dirname, 'src')
-    }
-  },
+
   
   // Force bundling of Node.js dependencies
   optimizeDeps: {
@@ -87,7 +83,6 @@ export default defineConfig({
   
   // Define global constants
   define: {
-    __DEV__: JSON.stringify(process.env.NODE_ENV === 'development'),
     // Handle Node.js require in CEP environment
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV || 'production'),
     global: 'globalThis'

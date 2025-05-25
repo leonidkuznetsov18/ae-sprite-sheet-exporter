@@ -190,7 +190,6 @@ class SpriteSheetExporter {
     }
     
     try {
-      // Step 1: Select export folder (no loading state yet)
       this.setStatus('Please select export folder...');
       const folderResult = await this.callAEFunction('selectExportFolder()');
       const folderData = JSON.parse(folderResult);
@@ -200,16 +199,15 @@ class SpriteSheetExporter {
         return;
       }
       
-      // Step 2: Start loading state and begin export process
       this.setExportButtonLoading(true);
       this.setStatus('Starting export process...');
       
       // Allow UI to update before proceeding with heavy operations
       await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Step 3: Export frames from After Effects
+ 
       this.setStatus('Rendering frames from After Effects...');
-      const renderResult = await this.evalScript('renderCompositionToPNGSequence', folderData.folderPath);
+      const renderResultRaw = await this.callAEFunction(`renderCompositionToPNGSequence("${folderData.folderPath.replace(/"/g, '\\"')}")`);
+      const renderResult = JSON.parse(renderResultRaw);
       
       if (renderResult.error) {
         throw new Error(`Frame export failed: ${renderResult.error}`);
@@ -219,7 +217,6 @@ class SpriteSheetExporter {
         throw new Error('No frames were exported');
       }
       
-      // Step 4: Generate sprite sheet
       this.setStatus('Creating sprite sheet from individual frames...');
       const spriteResult = await this.generateSpriteSheet(
         renderResult.tempFolder,
@@ -231,7 +228,6 @@ class SpriteSheetExporter {
         throw new Error(`Sprite sheet generation failed: ${spriteResult.error}`);
       }
       
-      // Step 5: Success!
       const folderName = path.basename(path.dirname(spriteResult.spriteSheetPath));
       this.setStatus(`✅ Export completed! Files saved to: ${folderName}`);
       this.logExportResults(spriteResult);
@@ -240,7 +236,7 @@ class SpriteSheetExporter {
       this.setStatus(`❌ Export failed: ${error.message}`);
       console.error('Export error:', error);
     } finally {
-      // Always reset button state
+      // reset button state
       this.setExportButtonLoading(false);
     }
   }
@@ -263,14 +259,7 @@ class SpriteSheetExporter {
     btn.offsetHeight;
   }
   
-  async evalScript(functionName, ...args) {
-    const script = args.length > 0 
-      ? `${functionName}(${args.map(arg => `"${String(arg).replace(/"/g, '\\"')}"`).join(', ')})`
-      : `${functionName}()`;
-    
-    const result = await this.callAEFunction(script);
-    return JSON.parse(result);
-  }
+
   
   async generateSpriteSheet(tempFolder, outputFolder, compInfo) {
     try {
@@ -323,14 +312,11 @@ class SpriteSheetExporter {
   async processCanvasGeneration(tempFolder, outputFolder, compInfo, framesToProcess) {
     this.debug('🎨 Starting Canvas-based sprite sheet generation');
     
-    // All files should be PNG at this point
-    const framesToUse = framesToProcess;
-    
     // Load first image to get dimensions
-    const firstImagePath = path.join(tempFolder, framesToUse[0]);
+    const firstImagePath = path.join(tempFolder, framesToProcess[0]);
     const { width: frameWidth, height: frameHeight } = await this.getImageDimensions(firstImagePath);
     
-    const frameCount = framesToUse.length;
+    const frameCount = framesToProcess.length;
     const layout = this.calculateSpriteLayout(frameCount);
     const spriteWidth = layout.cols * frameWidth;
     const spriteHeight = layout.rows * frameHeight;
@@ -347,7 +333,7 @@ class SpriteSheetExporter {
     ctx.clearRect(0, 0, spriteWidth, spriteHeight);
     
     // Load and draw all frames
-    const loadPromises = framesToUse.map((filename, i) => {
+    const loadPromises = framesToProcess.map((filename, i) => {
       return new Promise((resolve, reject) => {
         const img = new Image();
         img.onload = () => {
@@ -370,7 +356,6 @@ class SpriteSheetExporter {
     await Promise.all(loadPromises);
     
     // Convert canvas to blob and save
-    const cleanCompName = compInfo.name.replace(/[^a-zA-Z0-9_-]/g, '_');
     const spriteSheetPath = path.join(outputFolder, `spritesheet.png`);
     
     const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png', 1.0));
@@ -378,7 +363,7 @@ class SpriteSheetExporter {
     await fs.writeFile(spriteSheetPath, Buffer.from(buffer));
     
     // Generate metadata and usage examples
-    const metadata_obj = this.createMetadata(compInfo, layout, frameWidth, frameHeight, framesToUse);
+    const metadata_obj = this.createMetadata(compInfo, layout, frameWidth, frameHeight, framesToProcess);
     const metadataPath = path.join(outputFolder, `metadata.json`);
     await fs.writeJson(metadataPath, metadata_obj, { spaces: 2 });
     
@@ -390,7 +375,7 @@ class SpriteSheetExporter {
       method: 'canvas',
       spriteSheetPath,
       metadataPath,
-      frameCount: framesToUse.length,
+      frameCount: framesToProcess.length,
       outputs: [{
         format: 'PNG',
         path: spriteSheetPath,

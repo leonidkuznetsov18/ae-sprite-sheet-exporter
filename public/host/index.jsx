@@ -1,3 +1,6 @@
+// Include JSON polyfill for ExtendScript
+//@include "json2.js"
+
 // Simple logging
 function alert(message) {
     // Safer alert that won't interrupt the workflow
@@ -6,47 +9,6 @@ function alert(message) {
 
 // PNG templates for After Effects
 var PNG_TEMPLATES = ["_HIDDEN X-Factor 8", "_HIDDEN X-Factor 8 Premul", "_HIDDEN X-Factor 16", "_HIDDEN X-Factor 16 Premul"];
-
-// Simple object to string formatter - no JSON dependency
-function simpleStringify(obj) {
-    try {
-        if (obj === null) return "null";
-        if (obj === undefined) return "undefined";
-        
-        // Handle primitive types
-        var type = typeof obj;
-        if (type === "string") return '"' + obj.replace(/"/g, '\\"').replace(/\n/g, "\\n") + '"';
-        if (type === "number" || type === "boolean") return String(obj);
-        
-        // Handle arrays
-        if (obj instanceof Array) {
-            var arrStr = "[";
-            for (var i = 0; i < obj.length; i++) {
-                arrStr += (i > 0 ? "," : "") + simpleStringify(obj[i]);
-            }
-            return arrStr + "]";
-        }
-        
-        // Handle objects
-        if (type === "object") {
-            var objStr = "{";
-            var first = true;
-            for (var key in obj) {
-                if (obj.hasOwnProperty(key)) {
-                    if (!first) objStr += ",";
-                    first = false;
-                    objStr += '"' + key + '":' + simpleStringify(obj[key]);
-                }
-            }
-            return objStr + "}";
-        }
-        
-        // Default for unsupported types
-        return '""';
-    } catch (e) {
-        return '{"error":"Stringify error: ' + e.toString() + '"}';
-    }
-}
 
 // Get information about the active composition
 function getActiveCompInfo() {
@@ -67,20 +29,20 @@ function getActiveCompInfo() {
         // Check if app object exists
         if (typeof app === "undefined") {
             result.error = "After Effects app object is not available";
-            return simpleStringify(result);
+            return JSON.stringify(result);
         }
         
         // Check if project exists
         if (!app.project) {
             result.error = "No project is open";
-            return simpleStringify(result);
+            return JSON.stringify(result);
         }
         
         // Check if active item exists
         var item = app.project.activeItem;
         if (!item) {
             result.error = "No active item selected";
-            return simpleStringify(result);
+            return JSON.stringify(result);
         }
         
         // Check if the item has basic composition properties
@@ -96,12 +58,12 @@ function getActiveCompInfo() {
             );
         } catch (e) {
             result.error = "Selected item is not a composition";
-            return simpleStringify(result);
+            return JSON.stringify(result);
         }
         
         if (!hasCompProperties) {
             result.error = "Selected item is not a composition";
-            return simpleStringify(result);
+            return JSON.stringify(result);
         }
         
         // Get composition properties with type coercion and default values
@@ -130,7 +92,7 @@ function getActiveCompInfo() {
         result.error = "Error: " + e.toString();
     }
     
-    return simpleStringify(result);
+    return JSON.stringify(result);
 }
 
 // Show folder picker for sprite sheet export
@@ -139,7 +101,7 @@ function selectExportFolder() {
         var folder = Folder.selectDialog("Select folder for sprite sheet export");
         if (!folder) return "null";
         
-        return simpleStringify({
+        return JSON.stringify({
             folderPath: folder.fsName
         });
     } catch (e) {
@@ -165,13 +127,13 @@ function renderCompositionToPNGSequence(outputFolder) {
         // Basic checks
         if (!isAfterEffects()) {
             result.error = "This script requires Adobe After Effects";
-            return simpleStringify(result);
+            return JSON.stringify(result);
         }
         
         var comp = app.project.activeItem;
         if (!comp || !comp.duration) {
             result.error = "No active composition found";
-            return simpleStringify(result);
+            return JSON.stringify(result);
         }
         
         // Create temp folder for frames
@@ -181,13 +143,13 @@ function renderCompositionToPNGSequence(outputFolder) {
         
         if (!tempFolder.exists && !tempFolder.create()) {
                 result.error = "Failed to create temp directory: " + tempFolderPath;
-                return simpleStringify(result);
+                return JSON.stringify(result);
         }
         
         var frameCount = Math.floor(comp.duration * comp.frameRate);
         if (frameCount <= 0) {
             result.error = "Invalid frame count: " + frameCount;
-            return simpleStringify(result);
+            return JSON.stringify(result);
         }
         
         // Add composition to render queue and configure PNG output
@@ -214,7 +176,7 @@ function renderCompositionToPNGSequence(outputFolder) {
             
             if (!templateApplied) {
             result.error = "Could not configure PNG sequence output";
-            return simpleStringify(result);
+            return JSON.stringify(result);
         }
         
         // Set output path
@@ -236,10 +198,10 @@ function renderCompositionToPNGSequence(outputFolder) {
                     break;
                 } else if (itemStatus === RQItemStatus.FAILED) {
                 result.error = "Render failed";
-                return simpleStringify(result);
+                return JSON.stringify(result);
                 } else if (itemStatus === RQItemStatus.STOPPED) {
                     result.error = "Render was stopped";
-                return simpleStringify(result);
+                return JSON.stringify(result);
             }
             
             $.sleep(1000);
@@ -248,14 +210,14 @@ function renderCompositionToPNGSequence(outputFolder) {
         
         if (waitTime >= maxWaitTime) {
             result.error = "Render timeout after " + maxWaitTime + " seconds";
-            return simpleStringify(result);
+            return JSON.stringify(result);
         }
         
         // Check for generated files
         var allFiles = tempFolder.getFiles("*");
         if (!allFiles || allFiles.length === 0) {
             result.error = "No files were generated";
-            return simpleStringify(result);
+            return JSON.stringify(result);
         }
         
         // Count PNG files
@@ -269,13 +231,13 @@ function renderCompositionToPNGSequence(outputFolder) {
         
         if (pngFiles.length === 0) {
             result.error = "No PNG files were generated";
-            return simpleStringify(result);
+            return JSON.stringify(result);
         }
         
         addDebug("Generated " + pngFiles.length + " PNG files");
         
         // Clean up render queue
-            renderQueueItem.remove();
+        renderQueueItem.remove();
         
         // Return success
         result.tempFolder = tempFolderPath;
@@ -289,27 +251,12 @@ function renderCompositionToPNGSequence(outputFolder) {
             frameCount: frameCount
         };
         
-        return simpleStringify(result);
+        return JSON.stringify(result);
         
     } catch (e) {
         result.error = "Export error: " + e.toString();
-        return simpleStringify(result);
+        return JSON.stringify(result);
     }
 }
 
-// Clean up the render queue
-function cleanupRenderQueue() {
-    try {
-        // Remove completed render queue items
-        var rq = app.project.renderQueue;
-        for (var i = rq.items.length; i > 0; i--) {
-            var item = rq.items[i];
-            if (item.status === RQItemStatus.DONE || item.status === RQItemStatus.FAILED) {
-                item.remove();
-            }
-        }
-        return simpleStringify({success: true});
-    } catch (e) {
-        return simpleStringify({error: "Failed to cleanup render queue: " + e.toString()});
-    }
-}
+

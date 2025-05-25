@@ -5,7 +5,6 @@ Adobe After Effects CEP extension for exporting compositions as optimized sprite
 ## ✨ Features
 
 - **🎨 Canvas-Based Processing**: Pure JavaScript sprite sheet generation (no external dependencies)
-- **🚀 Modern UI**: Beautiful interface with loading states and copy-to-clipboard functionality
 - **📁 Organized Output**: Creates dedicated folders for each export with clean file structure
 - **⚡ Fast & Reliable**: Simplified PNG-only workflow for maximum compatibility
 - **🔧 Modern Build System**: Built with Vite, using ES6+ syntax transpiled to ES3/5 for CEP compatibility
@@ -21,13 +20,6 @@ See the AE Sprite Sheet Exporter in action:
 *Watch the complete workflow: opening the extension in After Effects, loading a composition, and exporting a sprite sheet with metadata.*
 
 > **🎥 Full Quality Video**: [`ae_export_sprite_demo.mp4`](./demo/ae_export_sprite_demo.mp4) *(Click to download the full MP4 version)*
-
-### What you'll see in the demo:
-1. **🔧 Extension Installation** - Quick setup process
-2. **🎨 After Effects Integration** - Seamless workflow within AE
-3. **📊 Real-time Processing** - Live progress updates and feedback
-4. **📁 Organized Output** - Clean file structure with sprite sheet and JSON metadata
-5. **🚀 Modern UI** - Beautiful interface with loading states and copy functionality
 
 ## 🚀 Quick Start
 
@@ -116,11 +108,9 @@ Each export creates a dedicated folder with the following structure:
 
 ### PNG Processing Workflow
 
-1. **Template Detection**: Automatically finds After Effects PNG sequence templates
-2. **Render Queue**: Uses AE's built-in render queue for frame export
-3. **Canvas Processing**: Loads PNG frames and composites into sprite sheet
-4. **Smart Layout**: Calculates optimal grid arrangement for frames
-5. **Metadata Generation**: Creates comprehensive JSON with frame coordinates
+1. **Render Queue**: Uses AE's built-in render queue for frame export
+2. **Canvas Processing**: Loads PNG frames and composites into sprite sheet
+3. **Metadata Generation**: Creates comprehensive JSON with frame coordinates
 
 ### Compatibility
 

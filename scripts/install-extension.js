@@ -100,7 +100,7 @@ async function installExtension() {
     // Create symlink to dist folder (self-contained extension)
     console.log(`Creating symlink from ${distDir} to ${extensionPath}`);
     
-          if (os.platform() === 'win32') {
+      if (os.platform() === 'win32') {
         // On Windows, use mklink command (requires admin privileges)
         try {
           execSync(`mklink /D "${extensionPath}" "${distDir}"`);
