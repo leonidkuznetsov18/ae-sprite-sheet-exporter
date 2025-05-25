@@ -3,16 +3,13 @@ const path = require('path');
 const os = require('os');
 const fs = require('fs-extra');
 
-// Sharp cannot work in CEP due to code signing conflicts
-// We'll use Canvas-based processing for all sprite sheet generation
-const sharp = null;
+// Canvas-based sprite sheet generation (PNG only)
 
 // Modern ES6+ client-side code for CEP extension
 class SpriteSheetExporter {
   constructor() {
     this.csInterface = new CSInterface();
     this.currentCompInfo = null;
-    this.hasSharp = false;
     
     // DOM Elements
     this.elements = {
@@ -34,7 +31,6 @@ class SpriteSheetExporter {
     this.setStatus('Extension loaded. Initializing Node.js modules...');
     
     try {
-      await this.loadNodeModules();
       this.setupEventListeners();
       this.setStatus('Extension loaded. Click "Update Composition Info" to begin.');
       await this.updateCompInfo();
@@ -44,101 +40,9 @@ class SpriteSheetExporter {
     }
   }
   
-  async loadNodeModules() {
-    this.debug('=== LOADING NODE.JS MODULES ===');
-    
-    try {
-      this.debug('Basic Node.js modules loaded successfully');
-      
-      // Enhanced Sharp loading with multiple strategies
-      await this.loadSharpLibrary();
-      
-      // Log environment information
-      this.logEnvironmentInfo();
-      
-    } catch (error) {
-      this.debug('Failed to load Node.js modules:', error);
-      throw new Error(`Node.js integration failed: ${error.message}`);
-    }
-  }
+
   
-  async loadSharpLibrary() {
-    this.debug('=== IMAGE PROCESSING SETUP ===');
-    this.debug('Sharp is not available in CEP due to code signing conflicts');
-    this.debug('Using Canvas-based sprite sheet generation');
-    this.debug('✅ Canvas supports PNG, JPEG, WebP formats');
-    
-    this.hasSharp = false;
-    this.sharp = null;
-  }
-  
-  getExtensionRoot() {
-    try {
-      return this.csInterface.getSystemPath(SystemPath.EXTENSION);
-    } catch (error) {
-      this.debug('Could not get extension path:', error.message);
-      return null;
-    }
-  }
-  
-  async provideDiagnosticInfo() {
-    this.debug('=== SHARP DIAGNOSTIC INFORMATION ===');
-    
-    try {
-      // Try to resolve Sharp and show where it's located
-      try {
-        const sharpPath = require.resolve('sharp');
-        this.debug(`✅ Sharp resolved to: ${sharpPath}`);
-        
-        const sharpDir = path.dirname(sharpPath);
-        const sharpPackageJson = path.join(sharpDir, 'package.json');
-        
-        if (fs.existsSync(sharpPackageJson)) {
-          const packageInfo = fs.readJsonSync(sharpPackageJson);
-          this.debug(`Sharp package version: ${packageInfo.version}`);
-        }
-        
-      } catch (resolveError) {
-        this.debug(`❌ Could not resolve Sharp: ${resolveError.message}`);
-        
-        // Show current working directory and module paths
-        this.debug(`Current working directory: ${process.cwd()}`);
-        this.debug(`Module paths: ${JSON.stringify(require.main?.paths || [], null, 2)}`);
-      }
-    } catch (error) {
-      this.debug(`Diagnostic check failed: ${error.message}`);
-    }
-  }
-  
-  logEnvironmentInfo() {
-    this.debug('=== NODE.JS ENVIRONMENT INFO ===');
-    this.debug(`Node.js version: ${process.version}`);
-    this.debug(`Platform: ${process.platform}`);
-    this.debug(`Architecture: ${process.arch}`);
-    this.debug(`Working directory: ${process.cwd()}`);
-    
-    // CEP environment detection
-    let cepVersion = 'unknown';
-    try {
-      if (window.cep?.getVersion) {
-        cepVersion = window.cep.getVersion();
-      } else if (window.__adobe_cep__) {
-        cepVersion = 'CEP detected (version method unavailable)';
-      }
-    } catch (error) {
-      cepVersion = `CEP detection failed: ${error.message}`;
-    }
-    
-    this.debug(`CEP version: ${cepVersion}`);
-    this.debug(`User Agent: ${navigator.userAgent}`);
-    
-    if (process.versions) {
-      this.debug('Process versions:', process.versions);
-    }
-    
-    this.debug(`fs-extra available: ${fs.readJsonSync ? 'yes' : 'no'}`);
-    this.debug(`Sharp available: ${this.hasSharp ? 'yes' : 'no'}`);
-  }
+
   
   setupEventListeners() {
     this.elements.updateBtn?.addEventListener('click', () => this.updateCompInfo());
@@ -358,21 +262,20 @@ class SpriteSheetExporter {
       this.debug('=== SPRITE SHEET GENERATION ===');
       this.debug('Temp folder:', tempFolder);
       this.debug('Output folder:', outputFolder);
-      this.debug('Sharp available:', this.hasSharp);
       
       if (!fs.existsSync(tempFolder)) {
         throw new Error(`Temp folder does not exist: ${tempFolder}`);
       }
       
       const allFiles = fs.readdirSync(tempFolder);
-      const imageFiles = this.filterImageFiles(allFiles);
+      const pngFiles = allFiles.filter(file => path.extname(file).toLowerCase() === '.png');
       
-      if (imageFiles.length === 0) {
-        throw new Error(`No supported image files found. Found: ${allFiles.join(', ')}`);
+      if (pngFiles.length === 0) {
+        throw new Error(`No PNG files found. Found: ${allFiles.join(', ')}`);
       }
       
       // Sort files for proper frame order
-      imageFiles.sort((a, b) => {
+      pngFiles.sort((a, b) => {
         const aMatch = a.match(/\d+/g);
         const aNum = parseInt(aMatch?.[aMatch.length - 1] || '0', 10);
         const bMatch = b.match(/\d+/g);
@@ -380,15 +283,9 @@ class SpriteSheetExporter {
         return aNum - bNum;
       });
       
-      this.debug('Sorted frame files:', imageFiles);
+      this.debug('Sorted PNG files:', pngFiles);
       
-      if (this.hasSharp) {
-        this.debug('🚀 Using Sharp-based generation (recommended)');
-        return await this.processSharpGeneration(tempFolder, outputFolder, compInfo, imageFiles);
-      } else {
-        this.debug('🎨 Using Canvas-based generation (fallback)');
-        return await this.processCanvasGeneration(tempFolder, outputFolder, compInfo, imageFiles);
-      }
+      return await this.processCanvasGeneration(tempFolder, outputFolder, compInfo, pngFiles);
       
     } catch (error) {
       this.debug('Sprite sheet generation error:', error);
@@ -396,148 +293,15 @@ class SpriteSheetExporter {
     }
   }
   
-  filterImageFiles(allFiles) {
-    if (this.hasSharp) {
-      // Sharp supports many formats
-      return allFiles.filter(file => {
-        const ext = path.extname(file).toLowerCase();
-        return ['.png', '.psd', '.tiff', '.tif', '.jpg', '.jpeg', '.webp', '.bmp'].includes(ext);
-      });
-    } else {
-      // Canvas only supports web formats
-      const compatibleFiles = allFiles.filter(file => {
-        const ext = path.extname(file).toLowerCase();
-        return ['.png', '.jpg', '.jpeg', '.gif', '.webp'].includes(ext);
-      });
-      
-      // Check for incompatible files
-      const incompatibleFiles = allFiles.filter(file => {
-        const ext = path.extname(file).toLowerCase();
-        return ['.tiff', '.tif', '.psd'].includes(ext);
-      });
-      
-      if (incompatibleFiles.length > 0) {
-        throw new Error(
-          `Canvas fallback cannot handle TIFF/PSD files. Found: ${incompatibleFiles.join(', ')}\n\n` +
-          'To fix this issue:\n' +
-          '1. Install Sharp: npm rebuild sharp\n' +
-          '2. Or configure After Effects to export PNG instead of TIFF'
-        );
-      }
-      
-      return compatibleFiles;
-    }
-  }
+
   
-  async processSharpGeneration(tempFolder, outputFolder, compInfo, framesToProcess) {
-    // Implementation would be similar to the original but with modern async/await syntax
-    // This is a simplified version - the full implementation would be quite long
-    const sharp = this.sharp;
-    const cleanCompName = compInfo.name.replace(/[^a-zA-Z0-9_-]/g, '_');
-    
-    // Load first image to get dimensions
-    const firstImagePath = path.join(tempFolder, framesToProcess[0]);
-    const metadata = await sharp(firstImagePath).metadata();
-    
-    const frameWidth = metadata.width;
-    const frameHeight = metadata.height;
-    const frameCount = framesToProcess.length;
-    
-    // Calculate layout
-    const layout = this.calculateSpriteLayout(frameCount);
-    const spriteWidth = layout.cols * frameWidth;
-    const spriteHeight = layout.rows * frameHeight;
-    
-    this.debug(`Sprite sheet layout: ${layout.cols}x${layout.rows} (${spriteWidth}x${spriteHeight})`);
-    
-    // Create composite operations
-    const compositeOperations = framesToProcess.map((filename, i) => {
-      const col = i % layout.cols;
-      const row = Math.floor(i / layout.cols);
-      const x = col * frameWidth;
-      const y = row * frameHeight;
-      
-      return {
-        input: path.join(tempFolder, filename),
-        left: x,
-        top: y
-      };
-    });
-    
-    // Create sprite sheet
-    const spriteSheetBuffer = await sharp({
-      create: {
-        width: spriteWidth,
-        height: spriteHeight,
-        channels: metadata.channels || 4,
-        background: { r: 0, g: 0, b: 0, alpha: 0 }
-      }
-    })
-    .composite(compositeOperations)
-    .png({ quality: 100, compressionLevel: 6 })
-    .toBuffer();
-    
-    // Save files
-    const pngPath = path.join(outputFolder, `${cleanCompName}_spritesheet.png`);
-    await fs.writeFile(pngPath, spriteSheetBuffer);
-    
-    // Generate metadata and usage examples
-    const metadata_obj = this.createMetadata(compInfo, layout, frameWidth, frameHeight, framesToProcess);
-    const metadataPath = path.join(outputFolder, `${cleanCompName}_metadata.json`);
-    await fs.writeJson(metadataPath, metadata_obj, { spaces: 2 });
-    
-    const usageExamplesPath = path.join(outputFolder, `${cleanCompName}_usage_examples.md`);
-    const usageExamples = this.generateUsageExamples(metadata_obj, cleanCompName);
-    await fs.writeFile(usageExamplesPath, usageExamples);
-    
-    // Cleanup
-    this.cleanupTempFiles(tempFolder, framesToProcess);
-    
-    return {
-      success: true,
-      method: 'sharp',
-      spriteSheetPath: pngPath,
-      metadataPath,
-      usageExamplesPath,
-      frameCount: framesToProcess.length,
-      outputs: [{
-        format: 'PNG',
-        path: pngPath,
-        description: 'Sharp-generated PNG sprite sheet',
-        sizeKB: Math.round((await fs.stat(pngPath)).size / 1024)
-      }]
-    };
-  }
+
   
   async processCanvasGeneration(tempFolder, outputFolder, compInfo, framesToProcess) {
     this.debug('🎨 Starting Canvas-based sprite sheet generation');
     
-    // Check if we have PNG files (Canvas-compatible) or need to reject TIFF
-    const pngFiles = framesToProcess.filter(filename => {
-      const ext = path.extname(filename).toLowerCase();
-      return ['.png', '.jpg', '.jpeg', '.gif', '.webp'].includes(ext);
-    });
-    
-    const tiffFiles = framesToProcess.filter(filename => {
-      const ext = path.extname(filename).toLowerCase();
-      return ['.tiff', '.tif', '.psd'].includes(ext);
-    });
-    
-    if (tiffFiles.length > 0 && pngFiles.length === 0) {
-      throw new Error(`Canvas cannot handle TIFF/PSD files. After Effects exported ${tiffFiles.length} TIFF files. Please use PNG export templates.`);
-    }
-    
-    if (pngFiles.length === 0) {
-      throw new Error('No Canvas-compatible image files found');
-    }
-    
-    this.debug(`Found ${pngFiles.length} Canvas-compatible files`);
-    if (tiffFiles.length > 0) {
-      this.debug(`Warning: Ignoring ${tiffFiles.length} TIFF files`);
-    }
-    
-    // Use PNG files for processing
-    const framesToUse = pngFiles;
+    // All files should be PNG at this point
+    const framesToUse = framesToProcess;
     
     // Load first image to get dimensions
     const firstImagePath = path.join(tempFolder, framesToUse[0]);
@@ -618,42 +382,7 @@ class SpriteSheetExporter {
     };
   }
   
-  async convertTiffFramesToPng(tempFolder, framesToProcess) {
-    this.debug('🔄 Converting TIFF frames to PNG for Canvas compatibility');
-    
-    const convertedFrames = [];
-    
-    for (const filename of framesToProcess) {
-      const ext = path.extname(filename).toLowerCase();
-      
-      if (['.png', '.jpg', '.jpeg', '.gif', '.webp'].includes(ext)) {
-        // Already Canvas-compatible
-        convertedFrames.push(filename);
-        continue;
-      }
-      
-      if (['.tiff', '.tif', '.psd'].includes(ext)) {
-        // Try to convert using a simple approach
-        try {
-          const convertedFilename = await this.convertSingleTiffToPng(tempFolder, filename);
-          if (convertedFilename) {
-            convertedFrames.push(convertedFilename);
-          }
-        } catch (error) {
-          this.debug(`Failed to convert ${filename}: ${error.message}`);
-        }
-      }
-    }
-    
-    return convertedFrames;
-  }
-  
-  async convertSingleTiffToPng(tempFolder, tiffFilename) {
-    // For now, we'll skip TIFF conversion and suggest using PNG export from AE
-    // A full TIFF decoder would be quite complex to implement
-    this.debug(`⚠️ Skipping TIFF conversion for ${tiffFilename} - Canvas cannot handle TIFF directly`);
-    return null;
-  }
+
   
   async getImageDimensions(imagePath) {
     return new Promise((resolve, reject) => {
@@ -741,8 +470,8 @@ class SpriteSheetExporter {
         timestamp: new Date().toISOString(),
         totalFrames: framesToProcess.length,
         successfulFrames: framesToProcess.length,
-        exporter: "AE Sprite Sheet Exporter v2.0 (Modern)",
-        method: this.hasSharp ? "sharp" : "canvas",
+        exporter: "AE Sprite Sheet Exporter v2.0 (Canvas)",
+        method: "canvas",
         outputFormat: "PNG"
       }
     };
