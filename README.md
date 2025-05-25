@@ -49,38 +49,44 @@ See the AE Sprite Sheet Exporter in action:
 
 ### Build/Dev process
 
-- **Build extension:** `npm run build:extension` (builds and copies all files to dist)
+- **Build extension:** `npm run build` (builds all files to dist)
 - **Install extension:** `npm run install:extension` (builds and symlinks to CEP extensions folder)
 
 ## 🏗️ Build System
 
-This project uses a modern build system with the following architecture:
+This project uses a modern, optimized build system with Vite that creates production-ready, self-contained extension packages:
 
-### Source Structure
+### Project Structure
 ```
-src/
-├── client/           # Modern ES6+ client-side code
-│   ├── index.html   # Main UI with modern styling and UX features
-│   ├── index.js     # Main application class with Canvas processing
-│   └── CSInterface.js # Adobe CEP interface
-└── host/            # Simplified ExtendScript for After Effects
-    └── index.jsx    # PNG template detection and render queue management
+├── index.html       # Main UI (builds to dist/index.html)
+├── src/
+│   └── main.js      # Modern ES6+ code with bundled dependencies
+├── public/          # Static files (copied to dist/)
+│   ├── CSInterface.js # Adobe CEP interface
+│   ├── .debug       # CEP debug configuration
+│   ├── CSXS/        # CEP manifest
+│   └── host/        # ExtendScript for After Effects
+└── vite.config.js   # Optimized Vite configuration
 ```
 
 ### Build Process
 
-1. **Vite Build**: Transpiles ES6+ to ES3/5 with polyfills for CEP compatibility
-2. **File Copy**: Copies ExtendScript, manifest, and dependencies to `dist/`
-3. **Symlink**: Creates symlink from `dist/` to CEP extensions folder
+1. **ES Module Bundling**: Bundles all Node.js dependencies (fs-extra, etc.) into a single 39KB file
+2. **Legacy Support**: Generates both modern and legacy bundles for CEP compatibility
+3. **Static Copy**: Automatically copies all `public/` files to `dist/`
+4. **Self-Contained Output**: Creates a complete extension package in `dist/`
 
-### Output Structure
+### Output Structure (Self-Contained)
 ```
-dist/
-├── index.html       # Transpiled UI
-├── assets/          # Bundled JavaScript (modern + legacy)
-├── host/            # ExtendScript files
+dist/                # Complete, distributable extension package
+├── index.html       # Main UI with injected scripts
+├── assets/
+│   ├── index.js     # 39KB bundled file (includes fs-extra)
+│   └── index-legacy.js # Legacy browser support
+├── CSInterface.js   # CEP interface
+├── .debug           # Debug configuration
 ├── CSXS/            # CEP manifest
-└── package.json     # For Node.js module resolution from project root
+└── host/            # ExtendScript files
 ```
 
 ## 📖 Usage
@@ -104,8 +110,8 @@ Each export creates a dedicated folder with the following structure:
 ### Core Technologies
 
 - **Canvas API**: High-performance sprite sheet generation in pure JavaScript
-- **fs-extra**: Enhanced file system operations for organized output
-- **Vite**: Modern build tool with ES6+ → ES3/5 transpilation
+- **fs-extra**: Enhanced file system operations (bundled into single file)
+- **Vite**: Modern build tool with optimized bundling and legacy support
 - **@vitejs/plugin-legacy**: Ensures compatibility with older CEP environments
 
 ### PNG Processing Workflow
@@ -127,11 +133,11 @@ Each export creates a dedicated folder with the following structure:
 
 ### CEP Compatibility
 
-Vite's legacy plugin ensures compatibility by:
-- Transpiling to ES3/5 syntax
-- Including necessary polyfills
-- Generating both modern and legacy bundles
-- Supporting older Chromium versions in CEP
+The build system ensures compatibility by:
+- **Optimized bundling** with all dependencies included in a single file
+- **Legacy support** for older CEP environments (Chrome 58+)
+- **Node.js module handling** with proper externalization of CEP built-ins
+- **Self-contained package** - no external dependencies required at runtime
 
 ### Debugging
 
@@ -155,15 +161,38 @@ Debug mode is automatically enabled during installation. Use the "📋 Copy Logs
 
 **Build Issues:**
 - Ensure all dependencies are installed: `npm install`
-- Clear dist and rebuild: `rm -rf dist && npm run build:extension`
+- Clear dist and rebuild: `rm -rf dist && npm run build`
 - Check Node.js version: `node --version` (should be 17.7.1+)
 
 ## 📊 Performance
 
-- **Bundle Size**: ~35KB total (legacy + modern)
+- **Bundle Size**: 39KB modern + 40KB legacy (includes all dependencies)
 - **Processing**: Canvas-based, no external image libraries
 - **Memory**: Efficient frame-by-frame processing
 - **Speed**: Direct PNG processing without format conversion
+- **Distribution**: Single self-contained folder (~150KB total)
+
+## 📦 Distribution
+
+The build system creates a completely self-contained extension package:
+
+### For Development
+```bash
+npm run install:extension  # Symlinks dist/ to CEP extensions folder
+```
+
+### For Distribution
+```bash
+npm run build              # Creates complete package in dist/
+```
+
+The `dist/` folder contains everything needed:
+- ✅ **No node_modules** - all dependencies bundled
+- ✅ **No build tools** - ready to run
+- ✅ **Cross-platform** - works on macOS and Windows
+- ✅ **Adobe Store ready** - just zip the dist/ folder
+
+Users can install by copying the `dist/` folder to their CEP extensions directory.
 
 ## 📄 License
 

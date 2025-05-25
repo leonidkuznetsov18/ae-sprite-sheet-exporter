@@ -1,5 +1,5 @@
-const path = require('path');
-const fs = require('fs-extra');
+import path from 'path';
+import fs from 'fs-extra';
 
 class SpriteSheetExporter {
   constructor() {
@@ -300,7 +300,7 @@ class SpriteSheetExporter {
       
       this.debug('Sorted PNG files:', pngFiles);
       
-      // Create dedicated output folder for this export
+      // Create dedicated output folder for export
       const cleanCompName = compInfo.name.replace(/[^a-zA-Z0-9_-]/g, '_');
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-').split('T')[0];
       const exportFolderName = `${cleanCompName}_spritesheet_${timestamp}`;

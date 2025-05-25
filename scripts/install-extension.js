@@ -79,7 +79,7 @@ async function installExtension() {
   try {
     // Check if dist directory exists
     if (!(await fs.pathExists(distDir))) {
-      console.error('❌ Dist directory not found. Please run "npm run build:extension" first.');
+      console.error('❌ Dist directory not found. Please run "npm run build" first.');
       process.exit(1);
     }
     
@@ -89,7 +89,7 @@ async function installExtension() {
     console.log(`Extensions path: ${extensionsPath}`);
     console.log(`Extension ID: ${extensionId}`);
     console.log(`Target path: ${extensionPath}`);
-    console.log(`Source path: ${projectRoot} (project root for Node.js module resolution)`);
+    console.log(`Source path: ${distDir} (self-contained extension package)`);
     
     // Ensure extensions directory exists
     await fs.ensureDir(extensionsPath);
@@ -97,19 +97,19 @@ async function installExtension() {
     // Remove existing extension
     await removeExistingExtension(extensionPath);
     
-    // Create symlink to project root (not dist) so Node.js can resolve modules
-    console.log(`Creating symlink from ${projectRoot} to ${extensionPath}`);
+    // Create symlink to dist folder (self-contained extension)
+    console.log(`Creating symlink from ${distDir} to ${extensionPath}`);
     
           if (os.platform() === 'win32') {
         // On Windows, use mklink command (requires admin privileges)
         try {
-          execSync(`mklink /D "${extensionPath}" "${projectRoot}"`);
+          execSync(`mklink /D "${extensionPath}" "${distDir}"`);
           console.log('✅ Extension installed successfully');
         } catch (error) {
           console.error('❌ Error creating symlink. Try running as administrator.');
           console.error(error.message);
           console.log('\nAlternatively, manually copy the files from:');
-          console.log(projectRoot);
+          console.log(distDir);
           console.log('to:');
           console.log(extensionPath);
         }
@@ -121,8 +121,8 @@ async function installExtension() {
           // Ignore errors
         }
         
-        // Create the symlink to project root
-        await fs.symlink(projectRoot, extensionPath);
+        // Create the symlink to dist folder
+        await fs.symlink(distDir, extensionPath);
         console.log('✅ Extension installed successfully');
       }
     
